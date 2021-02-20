@@ -1,14 +1,36 @@
 image: docker
-
 services:
   - docker:dind
 
+stages:
+  - build
+  - test
+  - release
+
+variables:
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
+
 before_script:
-  - docker login registry.gitlab.com -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 
 build:
+  stage: build
   script:
-    - docker pull registry.gitlab.com/mrwindowsd/devops-skillbox || true
-    - docker build -t registry.gitlab.com/mrwindowsd/devops-skillbox:latest -t registry.gitlab.com/mrwindowsd/devops-skillbox:$CI_COMMIT_SHORT_SHA . --cache-from registry.gitlab.com/mrwindowsd/devops-skillbox
-    - docker push registry.gitlab.com/mrwindowsd/devops-skillbox:latest
-    - docker push registry.gitlab.com/mrwindowsd/devops-skillbox:$CI_COMMIT_SHORT_SHA
+    - docker build --pull -t $CONTAINER_TEST_IMAGE .
+    - docker push $CONTAINER_TEST_IMAGE
+
+test1:
+  stage: test
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker run $CONTAINER_TEST_IMAGE yarn test
+
+release-image:
+  stage: release
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
+    - docker push $CONTAINER_RELEASE_IMAGE
+  only:
+    - master
