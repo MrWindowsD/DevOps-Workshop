@@ -107,7 +107,7 @@ Kubernetes — открытое программное обеспечение д
 Для того чтобы увеличить кол-во инстансов для нашего deployment-а, воспользуемся командой `kubectl scale deployment [name_deployment] --replicas=[number]` где [number] кол-во инстансов которое мы хотим.  
 Командой `kubectl get po` мы можем увидеть, что у нас создались ещё новые контейнеры.  
 7. Также есть возможность создать все эти сущность через файл _.gitlab-ci.yml_. Для этого можем воспользоваться Сервисом **NodePort** — самый примитивный способ направить внешний трафик в сервис. NodePort, как следует из названия, открывает указанный порт для всех Nodes (виртуальных машин), и трафик на этот порт перенаправляется сервису.  
-YAML для службы NodePort выглядит так:  
+YAML (мы создаём отдельный файл, к примеру _deploy.yml_) для службы NodePort выглядит так:  
 
 ---
 
@@ -134,9 +134,125 @@ spec:
 Если IP-адрес узла/виртуальной машины изменяется, придется разбираться  
   
 По этим причинам я не рекомендую использовать этот метод в продакшн, чтобы напрямую предоставлять доступ к сервису. Но если постоянная доступность сервиса вам безразлична, а уровень затрат — нет, этот метод для вас. Хороший пример такого приложения — демка или временная затычка.  
+8. Для LoadBalancer YAML файл (мы создаём отдельный файл, к примеру _deploy.yml_) будет выглядит примерно так:  
 
-На этом создание deployment-а подошёл к концу.
+---
 
+
+apiVersion: apps/v1  
+kind: Deployment  
+metadata:  
+ㅤname: [name_deployment]  
+ㅤlabels:  
+ㅤㅤapp: [name_deployment]  
+spec:  
+ㅤreplicas: [number]  
+ㅤselector:  
+ㅤㅤmatchLabels:  
+ㅤㅤㅤapp: [name_deployment]  
+ㅤtemplate:  
+ㅤㅤmetadata:  
+ㅤㅤㅤlabels:  
+ㅤㅤㅤㅤapp: [name_deployment]  
+ㅤㅤspec:  
+ㅤㅤㅤcontainers:  
+ㅤㅤㅤㅤ- name: [name_deployment]  
+ㅤㅤㅤㅤㅤimage: registry.gitlab.com/userName/repoName:latest  
+  
+  
+apiVersion: v1  
+kind: Service  
+metadata:  
+ㅤname: [name_deployment]  
+spec:  
+ㅤselector:  
+ㅤㅤapp: [name_deployment]  
+ㅤports:  
+ㅤㅤ- port: [number]  
+ㅤㅤㅤtargetPort: [number]  
+ㅤㅤtype: LoadBalancer  
+
+---
+
+На этом создание deployment-а подошёл к концу.  
+
+## Красивый pipeline
+На последок хочется сделать наш pipeline более грамотным и красивым. Для это сделаем следующие изменения:  
+
+---
+
+image: docker  
+services:  
+ㅤㅤ- docker:dind  
+
+stages:  
+ㅤ- build  
+ㅤ- test  
+ㅤ- release  
+
+---
+
+Такой добавкой мы разделим наш pipeline на этапы, а именно на build, test и release.
+
+---
+
+variables:  
+ㅤCONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA  
+ㅤCONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest  
+
+---
+
+Тут мы выносим переменные в отдельный блок, чтобы было проще к ним обращаться. Также изменения не будут дублироваться.
+
+---
+
+before_script:  
+ㅤ- docker login registry.gitlab.com -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD  
+
+---
+
+Тут мы ничего не меняем.
+
+---
+
+build:  
+ㅤstage: build  
+ㅤscript:  
+ㅤㅤ- docker build --pull -t $CONTAINER_TEST_IMAGE .  
+ㅤㅤ- docker push $CONTAINER_TEST_IMAGE  
+
+---
+
+Это этап сборки, который был упрощён для удобства. Как можно заметить тут теперь используется конструкция `$CONTAINER_TEST_IMAGE` которая была вынесена в отдельный блок выше, что сильно сокращает наш код и делает его более читабельным.
+
+---
+
+test:  
+ㅤstage: test  
+ㅤscript:  
+ㅤㅤ- docker pull $CONTAINER_TEST_IMAGE  
+ㅤㅤ- docker run $CONTAINER_TEST_IMAGE yarn test  
+
+---
+
+Это новый блок. Блок теста. Мы кэшируем наш билд и запускаем знакомый `yarn test`. Однако хочу заметить, что в таком случае нужно в файле _Dockerfile_ убрать или закомментировать строку `RUN yarn test`, думаю понятно зачем.
+
+---
+
+release-image:  
+ㅤstage: release  
+ㅤscript:  
+ㅤㅤ- docker pull $CONTAINER_TEST_IMAGE  
+ㅤㅤ- docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE  
+ㅤㅤ- docker push $CONTAINER_RELEASE_IMAGE  
+ㅤonly:  
+ㅤㅤ- master  
+
+---
+
+Это релиз нашего билда. Он немного потолстел, зато стал стройнее, особенно за счёт конструкции `only: - master` которая делает релиз нового билда в ветку master, что упрощает жизнь не трогая ветку main.
+
+Вот и всё. Процесс долгий, сложный, зато интереный ! Good Luck 
 
 ---
 
