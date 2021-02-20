@@ -44,7 +44,7 @@ CI (Continuous Integration) — в дословном переводе «неп�
 
 > image: docker
 
-> > services:  
+> services:  
 ㅤㅤ- docker:dind
 
 > build:  
@@ -67,10 +67,10 @@ _Так как это YAML соблюдайте пробелы и разметк
 
 > image: docker  
 
-> > services:  
+> services:  
 ㅤㅤ- docker:dind  
 
-b> efore_script:  
+> before_script:  
 ㅤㅤ- docker login registry.gitlab.com -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD  
   
 > build:  
@@ -206,7 +206,7 @@ services:
 
 ---
 
-b> efore_script:  
+> before_script:  
 ㅤ- docker login registry.gitlab.com -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD  
 
 ---
