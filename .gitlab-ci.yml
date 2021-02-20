@@ -3,6 +3,10 @@ image: docker
 services:
   - docker:dind
 
+before_script:
+  - docker login registry.gitlab.com -u $CI_REGISTRY_USER -p &CI_REGISTRY_PASSWORD
+
 build:
   script:
-    - docker build . --tag flatris
+    - docker build -t registry.gitlab.com/mrwindowsd/devops-skillbox .
+    - docker push registry.gitlab.com/mrwindowsd/devops-skillbox
