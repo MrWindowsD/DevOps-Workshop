@@ -239,7 +239,7 @@ test:
 
 ---
 
-release-image:  
+> release-image:  
 ㅤstage: release  
 ㅤscript:  
 ㅤㅤ- docker pull $CONTAINER_TEST_IMAGE  
