@@ -42,12 +42,12 @@ CI (Continuous Integration) — в дословном переводе «неп�
 
 ---
 
-image: docker
+> image: docker
 
-services:  
+> > services:  
 ㅤㅤ- docker:dind
 
-build:  
+> build:  
 ㅤㅤscript:  
 ㅤㅤㅤㅤ- docker build . --tag flatris  
 
@@ -65,15 +65,15 @@ _Так как это YAML соблюдайте пробелы и разметк
 
 ---
 
-image: docker  
+> image: docker  
 
-services:  
+> > services:  
 ㅤㅤ- docker:dind  
 
-before_script:  
+b> efore_script:  
 ㅤㅤ- docker login registry.gitlab.com -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD  
   
-build:  
+> build:  
 ㅤㅤscript:  
 ㅤㅤㅤㅤ- docker pull registry.gitlab.com/userName/repoName || true  
 ㅤㅤㅤㅤ- docker build -t registry.gitlab.com/userName/repoName:latest -t registry.gitlab.com/userName/repoName:$CI_COMMIT_SHORT_SHA . --cache-from registry.gitlab.com/userName/repoName  
@@ -111,7 +111,7 @@ YAML (мы создаём отдельный файл, к примеру _deploy
 
 ---
 
-apiVersion: v1  
+> apiVersion: v1  
 kind: Service  
 metadata:  
 ㅤname: my-nodeport-service  
@@ -139,7 +139,7 @@ spec:
 ---
 
 
-apiVersion: apps/v1  
+> apiVersion: apps/v1  
 kind: Deployment  
 metadata:  
 ㅤname: [name_deployment]  
@@ -160,7 +160,7 @@ spec:
 ㅤㅤㅤㅤㅤimage: registry.gitlab.com/userName/repoName:latest  
   
   
-apiVersion: v1  
+> apiVersion: v1  
 kind: Service  
 metadata:  
 ㅤname: [name_deployment]  
@@ -181,11 +181,11 @@ spec:
 
 ---
 
-image: docker  
+> image: docker  
 services:  
 ㅤㅤ- docker:dind  
 
-stages:  
+> stages:  
 ㅤ- build  
 ㅤ- test  
 ㅤ- release  
@@ -196,7 +196,7 @@ stages:
 
 ---
 
-variables:  
+> variables:  
 ㅤCONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA  
 ㅤCONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest  
 
@@ -206,7 +206,7 @@ variables:
 
 ---
 
-before_script:  
+b> efore_script:  
 ㅤ- docker login registry.gitlab.com -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD  
 
 ---
@@ -215,7 +215,7 @@ before_script:
 
 ---
 
-build:  
+> build:  
 ㅤstage: build  
 ㅤscript:  
 ㅤㅤ- docker build --pull -t $CONTAINER_TEST_IMAGE .  
@@ -227,7 +227,7 @@ build:
 
 ---
 
-test:  
+> test:  
 ㅤstage: test  
 ㅤscript:  
 ㅤㅤ- docker pull $CONTAINER_TEST_IMAGE  
