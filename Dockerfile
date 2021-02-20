@@ -7,7 +7,7 @@ RUN yarn install
 
 COPY . /skillbox
 
-RUN yarn test
+# RUN yarn test
 RUN yarn build
 
 CMD yarn start
